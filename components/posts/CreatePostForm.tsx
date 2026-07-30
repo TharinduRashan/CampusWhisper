@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import {
-  Loader2, AlertCircle, Image as ImageIcon, X, ChevronDown,
+  Loader2, AlertCircle, Image as ImageIcon, X, ChevronDown, Sparkles
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { LIMITS, CATEGORIES } from '@/lib/constants'
 import ImageUpload from '@/components/ui/ImageUpload'
+import type { Category } from '@/types'
 
 export default function CreatePostForm() {
   const router = useRouter()
@@ -16,17 +18,59 @@ export default function CreatePostForm() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
+  const [categories, setCategories] = useState<Pick<Category, 'id' | 'name' | 'slug' | 'color'>[]>([])
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [showImage, setShowImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isValid = title.trim().length >= 3 && categoryId !== null
+  // Fetch categories from DB on mount
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const supabase = createClient()
+        const { data } = await (supabase
+          .from('categories')
+          .select('id, name, slug, color')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }) as any)
+
+        if (data && data.length > 0) {
+          setCategories(data)
+        } else {
+          // Fallback to static CATEGORIES map with 1-based index IDs
+          setCategories(
+            CATEGORIES.map((cat, i) => ({
+              id: i + 1,
+              name: cat.name,
+              slug: cat.slug,
+              color: cat.color,
+            }))
+          )
+        }
+      } catch {
+        setCategories(
+          CATEGORIES.map((cat, i) => ({
+            id: i + 1,
+            name: cat.name,
+            slug: cat.slug,
+            color: cat.color,
+          }))
+        )
+      }
+    }
+    loadCategories()
+  }, [])
+
+  const isValid = title.trim().length >= 3 && categoryId !== null && !isNaN(categoryId)
   const titleRemaining = LIMITS.POST_TITLE - title.length
   const bodyRemaining = LIMITS.POST_BODY - body.length
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!isValid) { setError('Title (min 3 chars) and category are required.'); return }
+    if (!isValid) {
+      setError('Title (min 3 chars) and a valid category are required.')
+      return
+    }
     setError(null)
 
     startTransition(async () => {
@@ -52,11 +96,6 @@ export default function CreatePostForm() {
     })
   }
 
-  const selectedCategory = CATEGORIES.find((c) => {
-    // We'll resolve after category IDs are loaded from DB
-    return false
-  })
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Category selector */}
@@ -68,16 +107,20 @@ export default function CreatePostForm() {
           <select
             id="category"
             value={categoryId ?? ''}
-            onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => {
+              const val = e.target.value
+              setCategoryId(val ? Number(val) : null)
+            }}
             className={cn(
-              'input appearance-none pr-10 cursor-pointer',
+              'input appearance-none pr-10 cursor-pointer text-ink font-medium',
               !categoryId && 'text-ink-subtle'
             )}
             disabled={isPending}
+            required
           >
-            <option value="">Select a category…</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat.slug} value={cat.slug}>
+            <option value="" disabled>Select a category…</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id} className="text-ink bg-card">
                 {cat.name}
               </option>
             ))}
