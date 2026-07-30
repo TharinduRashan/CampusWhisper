@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createClient, getUserProfile } from '@/lib/supabase/server'
+import { createClient, createAdminClient, getUserProfile } from '@/lib/supabase/server'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -30,8 +30,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: { message: 'Forbidden' } }, { status: 403 })
   }
 
+  const adminSupabase = createAdminClient()
+
   // Soft delete comment
-  const { error } = await (supabase
+  const { error } = await (adminSupabase
     .from('comments')
     .update({ is_deleted: true, body: '[deleted]' } as never)
     .eq('id', id) as any)
