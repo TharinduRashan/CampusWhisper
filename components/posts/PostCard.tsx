@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import {
-  MessageCircle, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Share2,
+  MessageCircle, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Share2, Trash2,
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { cn, timeAgo, truncate } from '@/lib/utils'
@@ -12,6 +12,7 @@ import { getAnonLabel, getAliasColor } from '@/lib/alias'
 import VoteButtons from '@/components/votes/VoteButtons'
 import CategoryBadge from '@/components/ui/CategoryBadge'
 import ReportModal from '@/components/ui/ReportModal'
+import DeleteConfirmModal from '@/components/ui/DeleteConfirmModal'
 import type { PostWithMeta } from '@/types'
 
 interface PostCardProps {
@@ -19,6 +20,7 @@ interface PostCardProps {
   userId?: string
   isAuthenticated: boolean
   showFullBody?: boolean
+  onDeleted?: () => void
 }
 
 export default function PostCard({
@@ -26,16 +28,21 @@ export default function PostCard({
   userId,
   isAuthenticated,
   showFullBody = false,
+  onDeleted,
 }: PostCardProps) {
   const [bookmarked, setBookmarked] = useState(post.is_bookmarked)
   const [isBookmarking, setIsBookmarking] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const alias = getAnonLabel(post.id, post.author_id)
   const aliasColor = getAliasColor(post.id, post.author_id)
-  const isAuthor = userId === post.author_id
+  const isAuthor = Boolean(userId && userId === post.author_id)
   const bodyText = post.body ? (showFullBody ? post.body : truncate(post.body, 280)) : null
+
+  if (isDeleted) return null
 
   async function handleBookmark() {
     if (!isAuthenticated) { toast.error('Sign in to save posts'); return }
@@ -83,7 +90,7 @@ export default function PostCard({
 
             {/* Alias tag */}
             <span className={cn('alias-tag text-[10px] shrink-0', aliasColor)}>
-              {isAuthor ? 'OP' : alias.split(' ')[1]}
+              {isAuthor ? 'OP (You)' : alias.split(' ')[1]}
             </span>
           </div>
 
@@ -164,7 +171,7 @@ export default function PostCard({
                 }
               </button>
 
-              {/* Report / more menu */}
+              {/* Options menu */}
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((o) => !o)}
@@ -177,7 +184,16 @@ export default function PostCard({
                 {menuOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 bottom-full mb-1 z-20 w-36 bg-card border border-card-border rounded-xl shadow-card py-1 animate-scale-in">
+                    <div className="absolute right-0 bottom-full mb-1 z-20 w-40 bg-card border border-card-border rounded-xl shadow-card py-1 animate-scale-in">
+                      {isAuthor && (
+                        <button
+                          onClick={() => { setMenuOpen(false); setDeleteOpen(true) }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+                        >
+                          <Trash2 className="size-3.5" />
+                          Delete Post
+                        </button>
+                      )}
                       <button
                         onClick={() => { setMenuOpen(false); setReportOpen(true) }}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-muted hover:text-red-400 hover:bg-red-500/5 transition-colors"
@@ -199,6 +215,17 @@ export default function PostCard({
         onClose={() => setReportOpen(false)}
         targetId={post.id}
         targetType="post"
+      />
+
+      <DeleteConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={() => {
+          setIsDeleted(true)
+          if (onDeleted) onDeleted()
+        }}
+        postId={post.id}
+        title={post.title}
       />
     </>
   )

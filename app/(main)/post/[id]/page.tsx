@@ -2,16 +2,14 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, ImageIcon } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getUserProfile } from '@/lib/supabase/server'
 import VoteButtons from '@/components/votes/VoteButtons'
 import CommentThread from '@/components/comments/CommentThread'
-import CategoryBadge from '@/components/ui/CategoryBadge'
-import { timeAgo, formatFullDate } from '@/lib/utils'
-import { getAnonLabel, getAliasColor } from '@/lib/alias'
+import PostDetailHeader from '@/components/posts/PostDetailHeader'
+import { getAnonLabel } from '@/lib/alias'
 import type { CommentWithMeta, CommentSort, PostWithMeta } from '@/types'
-import { cn } from '@/lib/utils'
 
 interface PostPageProps {
   params: Promise<{ id: string }>
@@ -139,7 +137,6 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
     buildCommentTree(allComments, id, profile?.id, commentVotesMap),
     sort
   )
-  const aliasColor = getAliasColor(id, postRaw.author_id)
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -154,26 +151,20 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
 
       {/* Post card */}
       <article className="card p-6 space-y-4">
-        {/* Category + meta */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <CategoryBadge
-            category={{ name: post.category_name, slug: post.category_slug, color: post.category_color, icon: post.category_icon }}
-            size="md"
-          />
-          <span
-            className={cn('alias-tag text-[10px]', aliasColor)}
-            title="Anonymous poster"
-          >
-            Anonymous {getAnonLabel(id, postRaw.author_id).split(' ')[1]}
-          </span>
-          <span
-            className="text-xs text-ink-subtle ml-auto"
-            title={formatFullDate(postRaw.created_at)}
-          >
-            <Calendar className="size-3 inline mr-1" />
-            {timeAgo(postRaw.created_at)}
-          </span>
-        </div>
+        {/* Category + header actions */}
+        <PostDetailHeader
+          post={{
+            id: post.id,
+            title: post.title,
+            author_id: post.author_id,
+            created_at: post.created_at,
+            category_name: post.category_name,
+            category_slug: post.category_slug,
+            category_color: post.category_color,
+            category_icon: post.category_icon,
+          }}
+          userId={profile?.id}
+        />
 
         {/* Title */}
         <h1 className="text-xl font-bold text-ink leading-tight">{post.title}</h1>
