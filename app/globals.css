@@ -6,14 +6,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ── CSS Custom Properties & Design System Tokens ─────────────────────────── */
-html.dark, :root {
+html, html.dark {
   --font-inter: 'Inter', system-ui, sans-serif;
 
-  /* Dark theme (default) - RGB channels for opacity modifiers */
-  --bg-surface-rgb: 15, 15, 20;
-  --bg-card-rgb: 26, 26, 36;
-  --text-ink-rgb: 226, 226, 240;
+  /* Dark theme (default) - Space-separated channels for valid CSS rgb(r g b / alpha) */
+  --bg-surface-rgb: 15 15 20;
+  --bg-card-rgb: 26 26 36;
+  --text-ink-rgb: 226 226 240;
 
+  --bg-surface: #0f0f14;
+  --bg-card: #1a1a24;
   --bg-card-hover: #1f1f2e;
   --border-card: #2a2a3a;
 
@@ -30,10 +32,13 @@ html.dark, :root {
 
 /* ── Light Mode Override ──────────────────────────────────────────────────── */
 html.light {
-  --bg-surface-rgb: 248, 250, 252;
-  --bg-card-rgb: 255, 255, 255;
-  --text-ink-rgb: 15, 23, 42;
+  /* Light theme - Space-separated channels for valid CSS rgb(r g b / alpha) */
+  --bg-surface-rgb: 248 250 252;
+  --bg-card-rgb: 255 255 255;
+  --text-ink-rgb: 15 23 42;
 
+  --bg-surface: #f8fafc;
+  --bg-card: #ffffff;
   --bg-card-hover: #f1f5f9;
   --border-card: #e2e8f0;
 
