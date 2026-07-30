@@ -33,6 +33,18 @@ export async function createClient() {
 }
 
 /**
+ * Supabase admin client — uses service role key for system operations
+ * (bypasses RLS after server-side authentication checks).
+ */
+export function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  return createServerClient<Database>(url, serviceKey, {
+    cookies: { getAll: () => [], setAll: () => {} },
+  })
+}
+
+/**
  * Get the current authenticated user from the server.
  * Returns null if not authenticated.
  */

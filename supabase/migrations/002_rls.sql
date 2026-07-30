@@ -55,8 +55,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM auth.users
-    WHERE id = auth.uid() AND email_confirmed_at IS NOT NULL
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
   );
 $$;
 
@@ -113,13 +113,12 @@ CREATE POLICY "posts_public_read"
     )
   );
 
--- Verified, non-suspended users can create posts
+-- Authenticated, non-suspended users can create posts
 CREATE POLICY "posts_verified_insert"
   ON public.posts FOR INSERT
   WITH CHECK (
     auth.uid() IS NOT NULL
     AND auth.uid() = author_id
-    AND public.is_verified()
     AND NOT public.is_suspended()
   );
 
@@ -153,13 +152,12 @@ CREATE POLICY "comments_public_read"
     )
   );
 
--- Verified, non-suspended users can create comments
+-- Authenticated, non-suspended users can create comments
 CREATE POLICY "comments_verified_insert"
   ON public.comments FOR INSERT
   WITH CHECK (
     auth.uid() IS NOT NULL
     AND auth.uid() = author_id
-    AND public.is_verified()
     AND NOT public.is_suspended()
   );
 

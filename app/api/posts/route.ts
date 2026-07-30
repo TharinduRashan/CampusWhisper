@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createClient, getUserProfile } from '@/lib/supabase/server'
+import { createClient, createAdminClient, getUserProfile } from '@/lib/supabase/server'
 import { LIMITS } from '@/lib/constants'
 import type { SortMode } from '@/types'
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: { message: 'Category is required.' } }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { data: post, error } = await (supabase
       .from('posts')

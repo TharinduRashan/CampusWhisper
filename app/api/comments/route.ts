@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createClient, getUserProfile } from '@/lib/supabase/server'
+import { createClient, createAdminClient, getUserProfile } from '@/lib/supabase/server'
 import { LIMITS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: comment, error } = await (supabase
+    const adminSupabase = createAdminClient()
+
+    const { data: comment, error } = await (adminSupabase
       .from('comments')
       .insert({
         post_id,
