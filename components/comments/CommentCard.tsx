@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Flag, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Flag, MessageCircle, ChevronDown, ChevronUp, Trash2, Loader2 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { cn, timeAgo, formatFullDate } from '@/lib/utils'
 import { getAnonLabel, getAliasColor } from '@/lib/alias'
 import VoteButtons from '@/components/votes/VoteButtons'
@@ -26,15 +28,35 @@ export default function CommentCard({
   isAuthenticated,
   depth = 0,
 }: CommentCardProps) {
+  const router = useRouter()
   const [showReply, setShowReply] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const alias = getAnonLabel(postId, comment.author_id, comment.author_id === postAuthorId)
   const aliasColor = getAliasColor(postId, comment.author_id)
-  const isAuthor = userId === comment.author_id
+  const isAuthor = Boolean(userId && userId === comment.author_id)
   const isOP = comment.author_id === postAuthorId
   const maxDepth = 5
+
+  async function handleDeleteComment() {
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/comments/${comment.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message ?? 'Failed to delete comment')
+
+      toast.success('Comment deleted')
+      router.refresh()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete comment')
+    } finally {
+      setIsDeleting(false)
+      setDeleteConfirm(false)
+    }
+  }
 
   if (comment.is_deleted) {
     return (
@@ -110,7 +132,7 @@ export default function CommentCard({
               {comment.body}
             </p>
 
-            {/* Footer actions - always visible for usability */}
+            {/* Footer actions */}
             <div className="flex items-center gap-1 mt-2 pt-1">
               <VoteButtons
                 targetId={comment.id}
@@ -129,6 +151,38 @@ export default function CommentCard({
                   <MessageCircle className="size-3.5" />
                   Reply
                 </button>
+              )}
+
+              {/* Comment author delete option with double-check */}
+              {isAuthor && (
+                deleteConfirm ? (
+                  <div className="flex items-center gap-1.5 ml-2 text-xs bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg animate-slide-down">
+                    <span className="text-red-400 font-medium text-[11px]">Delete?</span>
+                    <button
+                      onClick={handleDeleteComment}
+                      disabled={isDeleting}
+                      className="px-2 py-0.5 rounded bg-red-600 text-white font-semibold text-[11px] hover:bg-red-500 transition-colors"
+                    >
+                      {isDeleting ? <Loader2 className="size-3 animate-spin" /> : 'Yes'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(false)}
+                      disabled={isDeleting}
+                      className="px-2 py-0.5 rounded bg-card border border-card-border text-ink-muted hover:text-ink text-[11px] transition-colors"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    className="vote-btn text-xs text-ink-subtle hover:text-red-400 ml-1"
+                    aria-label="Delete comment"
+                    title="Delete comment"
+                  >
+                    <Trash2 className="size-3.5 text-red-400/70 hover:text-red-400" />
+                  </button>
+                )
               )}
 
               <button
