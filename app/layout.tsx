@@ -68,7 +68,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
-      <head />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('theme');
+                  if (saved === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                  } else if (saved === 'dark') {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="bg-surface text-ink antialiased">
         {children}
       </body>
