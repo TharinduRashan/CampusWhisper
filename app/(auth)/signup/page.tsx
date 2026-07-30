@@ -84,7 +84,7 @@ export default function SignupPage() {
     }
 
     startTransition(async () => {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -97,6 +97,12 @@ export default function SignupPage() {
 
       if (authError) {
         setError(authError.message)
+        return
+      }
+
+      if (authData.session) {
+        router.push('/')
+        router.refresh()
         return
       }
 
