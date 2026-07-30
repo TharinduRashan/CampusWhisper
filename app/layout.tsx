@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   },
   description:
     'A safe, anonymous space for university students to discuss campus life, share confessions, ask questions, and connect — without revealing your identity.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   keywords: [
     'campus',
     'anonymous',
