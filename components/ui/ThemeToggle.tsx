@@ -14,13 +14,8 @@ export default function ThemeToggle({ className }: { className?: string }) {
   useEffect(() => {
     if (!mounted) return
     const root = document.documentElement
-    if (theme === 'light') {
-      root.classList.remove('dark')
-      root.classList.add('light')
-    } else {
-      root.classList.remove('light')
-      root.classList.add('dark')
-    }
+    root.classList.remove('dark', 'light')
+    root.classList.add(theme)
   }, [theme, mounted])
 
   if (!mounted) {
@@ -43,7 +38,7 @@ export default function ThemeToggle({ className }: { className?: string }) {
             'absolute inset-0 size-4 transition-all duration-300',
             theme === 'dark'
               ? 'opacity-0 rotate-90 scale-50'
-              : 'opacity-100 rotate-0 scale-100 text-amber-400'
+              : 'opacity-100 rotate-0 scale-100 text-amber-500'
           )}
         />
         <Moon
