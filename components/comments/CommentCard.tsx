@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Flag, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import { toast } from 'react-hot-toast'
 import { cn, timeAgo, formatFullDate } from '@/lib/utils'
 import { getAnonLabel, getAliasColor } from '@/lib/alias'
 import VoteButtons from '@/components/votes/VoteButtons'
@@ -66,11 +65,11 @@ export default function CommentCard({
         id={`comment-${comment.id}`}
         className={cn(
           'group',
-          depth > 0 && 'pl-4 border-l-2 border-card-border/40 ml-2 hover:border-primary-600/30 transition-colors'
+          depth > 0 && 'pl-3 sm:pl-4 border-l-2 border-card-border/60 ml-1.5 sm:ml-2 hover:border-primary-600/40 transition-colors'
         )}
       >
         {/* Comment header */}
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
           <span className={cn('alias-tag text-[10px]', aliasColor)}>
             {alias}
           </span>
@@ -93,7 +92,7 @@ export default function CommentCard({
           {comment.replies?.length > 0 && (
             <button
               onClick={() => setCollapsed((c) => !c)}
-              className="ml-auto text-ink-subtle hover:text-ink transition-colors"
+              className="ml-auto text-ink-subtle hover:text-ink transition-colors p-1"
               aria-label={collapsed ? 'Expand thread' : 'Collapse thread'}
             >
               {collapsed
@@ -111,8 +110,8 @@ export default function CommentCard({
               {comment.body}
             </p>
 
-            {/* Footer actions */}
-            <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Footer actions - always visible for usability */}
+            <div className="flex items-center gap-1 mt-2 pt-1">
               <VoteButtons
                 targetId={comment.id}
                 targetType="comment"

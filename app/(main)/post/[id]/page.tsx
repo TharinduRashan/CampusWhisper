@@ -29,6 +29,7 @@ function buildCommentTree(
     map.set(c.id, {
       ...c,
       replies: [],
+      score: c.score ?? 0,
       user_vote: (votesMap[c.id] ?? 0) as 0 | 1 | -1,
       alias: getAnonLabel(postId, c.author_id),
     })
@@ -49,11 +50,19 @@ function buildCommentTree(
 function sortComments(comments: CommentWithMeta[], sort: CommentSort): CommentWithMeta[] {
   const sorted = [...comments]
   switch (sort) {
-    case 'new':  sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); break
-    case 'top':  sorted.sort((a, b) => b.score - a.score); break
-    case 'best': sorted.sort((a, b) => b.score - a.score); break
+    case 'new':
+      sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      break
+    case 'top':
+    case 'best':
+    default:
+      sorted.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      break
   }
-  return sorted.map((c) => ({ ...c, replies: sortComments(c.replies, sort) }))
+  return sorted.map((c) => ({
+    ...c,
+    replies: c.replies && c.replies.length > 0 ? sortComments(c.replies, sort) : [],
+  }))
 }
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
@@ -88,11 +97,12 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
 
   const cat = postRaw.categories as any
 
-  // Fetch comments (flat, ordered by created_at for tree building)
+  // Fetch non-deleted comments (flat array ordered by created_at for tree construction)
   const { data: commentsRaw } = await (supabase
     .from('comments')
     .select('*')
     .eq('post_id', id)
+    .eq('is_deleted', false)
     .order('created_at', { ascending: true }) as any)
 
   const allComments = commentsRaw ?? []

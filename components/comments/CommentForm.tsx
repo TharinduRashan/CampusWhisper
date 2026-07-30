@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LIMITS } from '@/lib/constants'
@@ -25,6 +26,7 @@ export default function CommentForm({
   onCancel,
   autoFocus = false,
 }: CommentFormProps) {
+  const router = useRouter()
   const [body, setBody] = useState('')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +70,9 @@ export default function CommentForm({
 
         setBody('')
         toast.success(isReply ? 'Reply posted! 💬' : 'Comment posted! 💬')
+        
         onSuccess?.()
+        router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to post comment')
       }
