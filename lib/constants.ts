@@ -217,14 +217,8 @@ export const NOTIFICATION_LABELS: Record<string, string> = {
 // ── University Email Domains (client-accessible subset) ───────
 
 export const COMMON_UNI_DOMAINS = [
-  '.edu',
-  '.ac.uk',
-  '.ac.lk',
-  '.ac.za',
-  '.edu.au',
-  '.ac.nz',
-  '.edu.sg',
-  '.ac.in',
+  'my.sliit.lk',
+  'sliit.lk',
 ]
 
 // ── Max lengths (mirror DB constraints) ───────────────────────

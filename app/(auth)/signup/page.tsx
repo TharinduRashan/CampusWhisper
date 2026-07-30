@@ -9,27 +9,29 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { COMMON_UNI_DOMAINS } from '@/lib/constants'
 
-// University domain validation — client side check
-function isUniversityEmail(email: string): boolean {
+function getTargetDomains(): string[] {
   const allowed = (process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? '').trim()
-  if (!allowed) return true // dev mode — allow all
-
-  const domains = allowed.split(',').map((d) => d.trim().toLowerCase())
-  const lower = email.toLowerCase()
-  return domains.some((d) => lower.endsWith(d))
+  if (allowed) {
+    return allowed.split(',').map((d) => d.trim().toLowerCase().replace(/^\./, ''))
+  }
+  return ['my.sliit.lk', 'sliit.lk']
 }
 
-// Password strength (optional — not required, magic link is primary)
+// SLIIT & University domain validation
+function isUniversityEmail(email: string): boolean {
+  const domains = getTargetDomains()
+  const lower = email.trim().toLowerCase()
+  return domains.some((domain) => lower.endsWith(`@${domain}`) || lower.endsWith(`.${domain}`))
+}
+
 const BENEFITS = [
   { icon: EyeOff, text: 'Completely anonymous — no usernames' },
-  { icon: ShieldCheck, text: 'Only your university can verify you' },
-  { icon: GraduationCap, text: 'Exclusively for university students' },
+  { icon: ShieldCheck, text: 'Only verified SLIIT students can register' },
+  { icon: GraduationCap, text: 'Exclusively for SLIIT university students' },
 ]
 
 export default function SignupPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [isPending, startTransition] = useTransition()
   const [sent, setSent] = useState(false)
@@ -43,10 +45,8 @@ export default function SignupPage() {
     setEmail(val)
     setError(null)
 
-    // Live domain validation hint
     if (val.includes('@') && val.includes('.')) {
-      const allowed = (process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? '').trim()
-      if (allowed && !isUniversityEmail(val)) {
+      if (!isUniversityEmail(val)) {
         setDomainWarning(true)
       } else {
         setDomainWarning(false)
@@ -63,17 +63,14 @@ export default function SignupPage() {
     const trimmedEmail = email.trim().toLowerCase()
 
     if (!trimmedEmail) {
-      setError('Please enter your university email.')
+      setError('Please enter your SLIIT student email.')
       return
     }
 
-    // Client-side domain check
-    const allowed = (process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? '').trim()
-    if (allowed && !isUniversityEmail(trimmedEmail)) {
+    // Domain validation check
+    if (!isUniversityEmail(trimmedEmail)) {
       setError(
-        `Only university emails are allowed. Accepted domains: ${
-          allowed.split(',').join(', ')
-        }`
+        'Registration is restricted to SLIIT student email addresses (@my.sliit.lk)'
       )
       return
     }
@@ -83,9 +80,8 @@ export default function SignupPage() {
         email: trimmedEmail,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          shouldCreateUser: true, // Signup — create account if it doesn't exist
+          shouldCreateUser: true,
           data: {
-            // Pass initial metadata
             email_domain: trimmedEmail.split('@')[1],
           },
         },
@@ -112,7 +108,7 @@ export default function SignupPage() {
           Join CampusWhisper
         </h1>
         <p className="text-ink-muted text-sm leading-relaxed">
-          Discuss campus life anonymously — no name, no profile, just honest conversations.
+          Discuss SLIIT campus life anonymously — no name, no profile, just honest conversations.
         </p>
       </div>
 
@@ -135,7 +131,7 @@ export default function SignupPage() {
             {/* Email */}
             <div className="space-y-1.5">
               <label htmlFor="signup-email" className="block text-sm font-medium text-ink-muted">
-                University Email
+                SLIIT Student Email <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-ink-subtle" />
@@ -144,7 +140,7 @@ export default function SignupPage() {
                   type="email"
                   value={email}
                   onChange={handleEmailChange}
-                  placeholder="yourname@university.edu"
+                  placeholder="it21000000@my.sliit.lk"
                   className={cn(
                     'input pl-10',
                     (error || domainWarning) && 'input-error'
@@ -160,14 +156,14 @@ export default function SignupPage() {
               {domainWarning && !error && (
                 <p className="text-xs text-amber-400 flex items-center gap-1 mt-1">
                   <AlertCircle className="size-3" />
-                  This doesn&apos;t look like a university email
+                  Only SLIIT emails (@my.sliit.lk) can register.
                 </p>
               )}
 
               {/* Accepted domains hint */}
-              {COMMON_UNI_DOMAINS.length > 0 && !domainWarning && !error && (
+              {!domainWarning && !error && (
                 <p className="text-xs text-ink-subtle mt-1">
-                  Accepted: {COMMON_UNI_DOMAINS.slice(0, 4).join(', ')} and more
+                  Must end with <strong className="text-ink">@my.sliit.lk</strong>
                 </p>
               )}
             </div>
@@ -215,7 +211,7 @@ export default function SignupPage() {
 
         {/* Privacy note */}
         <p className="text-center text-xs text-ink-subtle leading-relaxed">
-          🔒 Your email is only used to verify you&apos;re a student.
+          🔒 Your email is only used to verify your student status.
           It&apos;s <strong className="text-ink-muted">never shown</strong> to anyone.
         </p>
       </div>
@@ -234,7 +230,7 @@ function VerifyPromptCard({ email }: { email: string }) {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-ink mb-2">Verify your email</h1>
+        <h1 className="text-2xl font-bold text-ink mb-2">Verify your SLIIT email</h1>
         <p className="text-ink-muted text-sm">
           We sent a verification link to:
         </p>
@@ -246,9 +242,9 @@ function VerifyPromptCard({ email }: { email: string }) {
       <div className="card p-6 text-left space-y-4">
         <p className="text-sm font-semibold text-ink">What happens next?</p>
         {[
-          { step: '1', text: 'Open your university inbox' },
+          { step: '1', text: 'Open your @my.sliit.lk student inbox' },
           { step: '2', text: 'Click the verification link in the email' },
-          { step: '3', text: 'You\'ll be signed in and ready to post anonymously!' },
+          { step: '3', text: 'You\'ll be signed in and ready to post anonymously on CampusWhisper!' },
         ].map(({ step, text }) => (
           <div key={step} className="flex items-center gap-3">
             <span className="flex items-center justify-center size-6 rounded-full bg-primary-600/20 text-primary-400 text-xs font-bold shrink-0">
@@ -261,12 +257,12 @@ function VerifyPromptCard({ email }: { email: string }) {
 
       {/* Resend */}
       <p className="text-xs text-ink-subtle">
-        Didn&apos;t receive it? Check your spam folder or{' '}
+        Didn&apos;t receive it? Check your junk/spam folder or{' '}
         <button
           onClick={() => window.location.reload()}
           className="text-primary-400 hover:text-primary-300 underline transition-colors"
         >
-          try a different email
+          try again
         </button>.
       </p>
     </div>
