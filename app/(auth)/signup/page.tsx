@@ -33,7 +33,6 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [domainWarning, setDomainWarning] = useState(false)
 
@@ -86,34 +85,37 @@ export default function SignupPage() {
     }
 
     startTransition(async () => {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            email_domain: trimmedEmail.split('@')[1],
-          },
-        },
-      })
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: trimmedEmail,
+            password,
+          }),
+        })
+        const data = await res.json()
 
-      if (authError) {
-        setError(authError.message)
-        return
-      }
+        if (!res.ok) {
+          throw new Error(data.error?.message ?? 'Failed to create account')
+        }
 
-      if (authData.session) {
+        // Account created & verified — automatically log in with password
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        })
+
+        if (loginError) {
+          throw new Error(loginError.message)
+        }
+
         router.push('/')
         router.refresh()
-        return
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Signup failed')
       }
-
-      setSent(true)
     })
-  }
-
-  if (sent) {
-    return <VerifyPromptCard email={email} />
   }
 
   return (
@@ -249,7 +251,7 @@ export default function SignupPage() {
               </>
             ) : (
               <>
-                Create Account & Get Verification Email
+                Create Anonymous Account
                 <ArrowRight className="size-4" />
               </>
             )}
@@ -272,46 +274,6 @@ export default function SignupPage() {
       <p className="text-center text-xs text-ink-subtle leading-relaxed">
         🔒 Your email is used only for verification and is <strong className="text-ink-muted">never displayed publicly</strong>.
       </p>
-    </div>
-  )
-}
-
-function VerifyPromptCard({ email }: { email: string }) {
-  return (
-    <div className="animate-scale-in text-center space-y-6">
-      <div className="inline-flex items-center justify-center size-20 rounded-3xl bg-green-500/10 border border-green-500/20 shadow-lg">
-        <CheckCircle2 className="size-9 text-green-400" />
-      </div>
-
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-2">Check your email</h1>
-        <p className="text-ink-muted text-sm">
-          We sent a verification link to:
-        </p>
-        <p className="font-semibold text-ink mt-1 text-sm bg-card border border-card-border rounded-xl px-4 py-2.5 inline-block">
-          {email}
-        </p>
-      </div>
-
-      <div className="card p-6 text-left space-y-4">
-        <p className="text-sm font-semibold text-ink">What happens next?</p>
-        {[
-          { step: '1', text: 'Open your university inbox' },
-          { step: '2', text: 'Click the verification link to verify your email for the first time' },
-          { step: '3', text: 'From now on, log in directly using your email and password!' },
-        ].map(({ step, text }) => (
-          <div key={step} className="flex items-start gap-3">
-            <span className="flex items-center justify-center size-6 rounded-full bg-primary-600/20 text-primary-400 text-xs font-bold shrink-0 mt-0.5">
-              {step}
-            </span>
-            <span className="text-sm text-ink-muted">{text}</span>
-          </div>
-        ))}
-      </div>
-
-      <Link href="/login" className="btn-primary btn-lg w-full inline-flex items-center justify-center">
-        Go to Login
-      </Link>
     </div>
   )
 }
