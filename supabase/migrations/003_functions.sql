@@ -15,10 +15,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (NEW.id, NEW.email)
-  ON CONFLICT (id) DO NOTHING;
+  IF NEW.email IS NOT NULL THEN
+    INSERT INTO public.profiles (id, email)
+    VALUES (NEW.id, NEW.email)
+    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
+  END IF;
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Ensure trigger never blocks auth.users signup insertion
+    RETURN NEW;
 END;
 $$;
 
